@@ -1,12 +1,15 @@
-import { SessionProvider } from "next-auth/react"
+import AuthProvider from "@/components/AuthProvider";
 
-export default function App({
-  Component,
-  pageProps: { session, ...pageProps },
-}) {
+export default function RootLayout({ children }) {
   return (
-    <SessionProvider session={session}>
-      <Component {...pageProps} />
-    </SessionProvider>
+    <html lang="en">
+      <body>
+        <main>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </main>
+      </body>
+    </html>
   )
 }
