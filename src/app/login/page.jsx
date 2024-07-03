@@ -1,27 +1,49 @@
 "use client";
-import React from 'react'
+import { useReducer, useState } from 'react'
 import { signIn, useSession } from "next-auth/react"
-import { Form, Row, Col, Button, Container } from 'react-bootstrap';
+import { Form, Row, Col, Button, Container, Alert } from 'react-bootstrap';
+import { redirect } from 'next/navigation';
 
 function Login() {
+    const [state, dispatch] = useReducer(formReducer, { email: '', password: '' })
+    const [err, setErr] = useState(null);
     const session = useSession();
-    console.log(session);
 
     if (session.status == "loading")
         return <p>Loading...</p>
 
     if (session.status == "authenticated")
-        return <p>user authenticated</p>
+        redirect('/')
+
+    const loginHandler = async () => {
+        const resp = await fetch('http://localhost:3000/api/auth/login', {
+            method: 'POST',
+            body: JSON.stringify(state)
+        })
+        console.log('resp', resp, await resp.json())
+        if (resp.statusText == "OK") {
+            redirect('/');
+        }
+
+        if (resp.status != 200) {
+            const { error } = await resp.json()
+            setErr(error)
+        }
+    }
 
     return (
         <Container className='p-5'>
+            {err && <Alert variant='danger' onClose={() => setErr(null)} dismissible>{err}</Alert>}
             <Form>
                 <Form.Group as={Row} className='mb-3'>
                     <Form.Label column sm="2">
                         Email
                     </Form.Label>
                     <Col sm={{ offset: 1, span: 9 }}>
-                        <Form.Control />
+                        <Form.Control value={state.email} onChange={e => dispatch({
+                            type: 'email',
+                            payload: e.target.value.trim()
+                        })} />
                     </Col>
                 </Form.Group>
                 <Form.Group as={Row} className='mb-3'>
@@ -29,18 +51,39 @@ function Login() {
                         Password
                     </Form.Label>
                     <Col sm={{ offset: 1, span: 9 }}>
-                        <Form.Control type="password" />
+                        <Form.Control value={state.password} type="password"
+                            onChange={e => dispatch({
+                                type: 'password',
+                                payload: e.target.value.trim()
+                            })}
+                        />
                     </Col>
                 </Form.Group>
                 <Form.Group as={Row} sm="4" className='mb-3 justify-content-center'>
-                    <Button variant='success'>Log In</Button>
+                    <Button variant='success' onClick={() => loginHandler()}>Log In</Button>
                 </Form.Group>
-                <Form.Group as={Row} sm="3" className='mb-3 justify-content-center'>
-                    <Button variant='danger' onClick={() => signIn("google")}>Login with google</Button>
+                <Form.Group as={Row} className='mb-3 justify-content-between'>
+                    <Col sm="5">
+                        <Button variant='danger' onClick={() => signIn("google")}>Login with google</Button>
+                    </Col>
+                    <Col sm="2">
+                        <Button variant='info'>SignUp</Button>
+                    </Col>
                 </Form.Group>
             </Form>
         </Container>
     )
+}
+
+const formReducer = (state, action) => {
+    switch (action.type) {
+        case "email":
+            return { ...state, email: action.payload }
+        case "password":
+            return { ...state, password: action.payload }
+        default:
+            return state
+    }
 }
 
 export default Login

@@ -1,0 +1,17 @@
+POST http://localhost:3000/api/auth/signup
+Content-Type: application/json
+
+{
+    "username": "akki-net",
+    "email": "akkiwebs@gmail.com",
+    "password": "akki"
+}
+
+###
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "akkiwbs@gmail.com",
+    "password": "akki"
+}
