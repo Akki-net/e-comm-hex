@@ -3,14 +3,14 @@ import { useEffect, useReducer, useState } from 'react'
 import { signIn, useSession } from "next-auth/react"
 import { Form, Row, Col, Button, Container, Alert } from 'react-bootstrap';
 import { useRouter } from 'next/navigation';
+import { useCookies } from 'react-cookie';
 
 function Login() {
     const router = useRouter();
     const [state, dispatch] = useReducer(formReducer, { email: '', password: '' })
     const [err, setErr] = useState(null);
+    const [, setCookie] = useCookies(['userAuth']);
     const session = useSession();
-
-    console.log('session', session)
 
     useEffect(() => {
         if (session.status == "authenticated") {
@@ -35,6 +35,10 @@ function Login() {
         })
 
         if (resp.statusText == "OK") {
+            const data = await resp.json()
+            const now = new Date();
+            now.setTime(now.getTime() + 24*60*60*1000)
+            setCookie('userAuth', JSON.stringify(data), { path: '/', expires:now });
             router.push('/');
             return
         }
