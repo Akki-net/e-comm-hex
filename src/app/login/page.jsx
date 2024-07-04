@@ -1,33 +1,48 @@
 "use client";
-import { useReducer, useState } from 'react'
+import { useEffect, useReducer, useState } from 'react'
 import { signIn, useSession } from "next-auth/react"
 import { Form, Row, Col, Button, Container, Alert } from 'react-bootstrap';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 function Login() {
+    const router = useRouter();
     const [state, dispatch] = useReducer(formReducer, { email: '', password: '' })
     const [err, setErr] = useState(null);
     const session = useSession();
 
+    console.log('session', session)
+
+    useEffect(() => {
+        if (session.status == "authenticated") {
+            router.push('/')
+            return
+        }
+    }, [session])
+
     if (session.status == "loading")
         return <p>Loading...</p>
 
-    if (session.status == "authenticated")
-        redirect('/')
-
     const loginHandler = async () => {
+        if (!state.email || !state.password) {
+            setErr('Credentials missing')
+            setTimeout(() => setErr(null), 5000)
+            return
+        }
+
         const resp = await fetch('http://localhost:3000/api/auth/login', {
             method: 'POST',
             body: JSON.stringify(state)
         })
-        console.log('resp', resp, await resp.json())
+
         if (resp.statusText == "OK") {
-            redirect('/');
+            router.push('/');
+            return
         }
 
         if (resp.status != 200) {
             const { error } = await resp.json()
             setErr(error)
+            setTimeout(() => setErr(null), 5000)
         }
     }
 
